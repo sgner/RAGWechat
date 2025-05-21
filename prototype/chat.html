@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>对话 - 知识库管理与对话助手</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/tdesign-mobile-vue/dist/tdesign.min.css" />
+  <style>
+    body {
+      background-color: #f8f8f8;
+      font-family: PingFang SC, Helvetica Neue, Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .message-bubble {
+      max-width: 80%;
+      border-radius: 16px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .user-message {
+      background-color: #0080ff;
+      color: white;
+      border-bottom-right-radius: 4px;
+      align-self: flex-end;
+    }
+    .assistant-message {
+      background-color: #f0f0f0;
+      color: #333;
+      border-bottom-left-radius: 4px;
+      align-self: flex-start;
+    }
+    .dropdown-panel {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .typing-indicator span {
+      animation: blink 1.4s infinite both;
+    }
+    .typing-indicator span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes blink {
+      0% { opacity: 0.1; }
+      20% { opacity: 1; }
+      100% { opacity: 0.1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <!-- 顶部导航栏 -->
+    <div class="bg-white px-4 py-3 flex items-center justify-between shadow-sm">
+      <div class="flex items-center">
+        <button class="mr-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
+      
+      <!-- 知识库选择器 -->
+      <div class="relative">
+        <button class="flex items-center text-gray-700 font-medium">
+          <span>前端开发知识库</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+      
+      <button>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+        </svg>
+      </button>
+    </div>
+    
+    <!-- 对话区域 -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+      <!-- 系统提示 -->
+      <div class="bg-blue-50 text-blue-600 text-xs rounded-lg p-3 mx-auto max-w-xs text-center">
+        您已连接到"前端开发知识库"，可以开始对话了
+      </div>
+      
+      <!-- 对话内容 -->
+      <div class="flex flex-col">
+        <div class="flex items-start mb-4">
+          <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 mr-2">A</div>
+          <div class="message-bubble assistant-message">
+            <p>你好！我是基于前端开发知识库的AI助手。有什么前端开发问题需要我帮助解答吗？</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start justify-end mb-4">
+          <div class="message-bubble user-message">
+            <p>我想了解React Hooks的使用场景，特别是useEffect的清理函数应该怎么用？</p>
+          </div>
+        </div>
+        
+        <div class="flex items-start mb-4">
+          <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 mr-2">A</div>
+          <div class="message-bubble assistant-message">
+            <p>React useEffect的清理函数主要用于防止内存泄漏和解除订阅等场景。当组件卸载或者依赖项变化导致effect重新执行前，React会调用清理函数。</p>
+            <p class="mt-2">使用方法是在useEffect中返回一个函数：</p>
+            <pre class="bg-gray-100 p-2 rounded mt-2 text-sm overflow-x-auto">
+useEffect(() => {
+  // 设置订阅
+  const subscription = someAPI.subscribe();
+  
+  // 返回清理函数
+  return () => {
+    // 取消订阅
+    subscription.unsubscribe();
+  };
+}, [someValue]);</pre>
+            <p class="mt-2">常见的使用场景包括:</p>
+            <ul class="list-disc list-inside mt-1 ml-2">
+              <li>清除定时器</li>
+              <li>取消网络请求</li>
+              <li>取消事件监听器</li>
+              <li>取消第三方库的订阅</li>
+            </ul>
+          </div>
+        </div>
+        
+        <div class="flex items-start">
+          <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 mr-2">A</div>
+          <div class="message-bubble assistant-message bg-gray-100 px-4">
+            <div class="typing-indicator py-2">
+              <span>•</span>
+              <span>•</span>
+              <span>•</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 引用的知识 -->
+    <div class="bg-blue-50 p-3 mx-2 mb-2 rounded-lg">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-medium text-blue-600">引用的知识来源</span>
+        <button class="text-xs text-blue-600">收起</button>
+      </div>
+      <div class="text-xs text-gray-600 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        React Hooks 最佳实践 (第15-17页)
+      </div>
+    </div>
+    
+    <!-- 输入框 -->
+    <div class="bg-white p-2 border-t">
+      <div class="flex items-center">
+        <button class="p-2 text-gray-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+        </button>
+        <div class="flex-1 border rounded-full bg-gray-100 px-4 py-2 mr-2">
+          <input type="text" placeholder="请输入问题..." class="w-full bg-transparent focus:outline-none" />
+        </div>
+        <button class="p-2 bg-blue-500 text-white rounded-full">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html> 
