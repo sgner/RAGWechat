@@ -1,0 +1,64 @@
+{
+  "pages": [
+    "pages/home/home",
+    "pages/knowledge-detail/knowledge-detail",
+    "pages/chat/chat",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "知识库管理与对话助手",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "custom": false,
+    "color": "#999999",
+    "selectedColor": "#0052d9",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "知识库",
+        "iconPath": "assets/icons/knowledge-base.png",
+        "selectedIconPath": "assets/icons/knowledge-base-active.png"
+      },
+      {
+        "pagePath": "pages/chat/chat",
+        "text": "对话",
+        "iconPath": "assets/icons/chat.png",
+        "selectedIconPath": "assets/icons/chat-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "assets/icons/profile.png",
+        "selectedIconPath": "assets/icons/profile-active.png"
+      }
+    ]
+  },
+  "usingComponents": {
+    "t-button": "./miniprogram/miniprogram_npm/tdesign-miniprogram/button/button",
+    "t-icon": "./miniprogram/miniprogram_npm/tdesign-miniprogram/icon/icon",
+    "t-avatar": "./miniprogram/miniprogram_npm/tdesign-miniprogram/avatar/avatar",
+    "t-input": "./miniprogram/miniprogram_npm/tdesign-miniprogram/input/input",
+    "t-cell": "./miniprogram/miniprogram_npm/tdesign-miniprogram/cell/cell",
+    "t-cell-group": "./miniprogram/miniprogram_npm/tdesign-miniprogram/cell-group/cell-group",
+    "t-tag": "./miniprogram/miniprogram_npm/tdesign-miniprogram/tag/tag",
+    "t-tabs": "./miniprogram/miniprogram_npm/tdesign-miniprogram/tabs/tabs",
+    "t-tab-panel": "./miniprogram/miniprogram_npm/tdesign-miniprogram/tab-panel/tab-panel",
+    "t-loading": "./miniprogram/miniprogram_npm/tdesign-miniprogram/loading/loading",
+    "t-fab": "./miniprogram/miniprogram_npm/tdesign-miniprogram/fab/fab",
+    "t-empty": "./miniprogram/miniprogram_npm/tdesign-miniprogram/empty/empty",
+    "t-popup": "./miniprogram/miniprogram_npm/tdesign-miniprogram/popup/popup",
+    "t-dialog": "./miniprogram/miniprogram_npm/tdesign-miniprogram/dialog/dialog",
+    "t-swiper": "./miniprogram/miniprogram_npm/tdesign-miniprogram/swiper/swiper",
+    "t-swiper-item": "./miniprogram/miniprogram_npm/tdesign-miniprogram/swipe-cell/swipe-cell",
+    "t-textarea": "./miniprogram/miniprogram_npm/tdesign-miniprogram/textarea/textarea",
+    "t-picker": "./miniprogram/miniprogram_npm/tdesign-miniprogram/picker/picker",
+    "t-picker-item": "./miniprogram/miniprogram_npm/tdesign-miniprogram/picker-item/picker-item"
+  },
+  "useExtendedLib": {
+    "weui": true
+  }
+} 

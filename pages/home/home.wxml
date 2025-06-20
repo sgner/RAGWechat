@@ -1,0 +1,492 @@
+<view class="container">
+  <!-- 顶部导航栏 -->
+  <view class="header">
+    <view class="title">我的知识库</view>
+    <t-button variant="text" shape="circle" size="small" bindtap="onAddKnowledgeBase" style="margin-right: 8rpx;">
+      <t-icon name="add" size="48rpx" />
+    </t-button>
+  </view>
+  
+  <!-- 知识库列表 -->
+  <block wx:if="{{loading}}">
+    <view class="loading-container">
+      <t-loading theme="circular" size="48rpx" text="加载中..." inherit-color />
+    </view>
+  </block>
+  <block wx:else>
+    <scroll-view scroll-y class="knowledge-list" enhanced show-scrollbar="{{false}}" bindscrolltolower="loadMoreKnowledgeBases">
+      <block wx:if="{{knowledgeBases.length > 0}}">
+        <view 
+          class="knowledge-item" 
+          wx:for="{{knowledgeBases}}" 
+          wx:key="id"
+          bindtap="goToDetail" 
+          data-id="{{item.id}}"
+        >
+          <view class="flex-between">
+            <view class="knowledge-header">
+              <block wx:if="{{item.avatar}}">
+                <image src="{{item.avatar}}" class="kb-avatar" mode="aspectFill"></image>
+              </block>
+              <block wx:else>
+                <t-avatar class="kb-avatar" icon="book" size="medium" />
+              </block>
+              <view class="knowledge-title">
+                <view class="knowledge-name">{{item.name}}</view>
+                <view class="knowledge-meta">
+                  <text class="language-tag">{{item.language}}</text>
+                  <text class="update-time">更新: {{item.updateTime}}</text>
+                </view>
+              </view>
+            </view>
+            <view class="actions" catchtap="stopEvent">
+              <view class="action-buttons">
+                <t-icon name="edit" size="40rpx" catchtap="onEditKnowledgeBase" data-id="{{item.id}}" />
+                <t-icon name="delete" size="40rpx" class="delete-icon" catchtap="onDeleteKnowledgeBase" data-id="{{item.id}}" />
+              </view>
+            </view>
+          </view>
+          
+          <view class="knowledge-desc" wx:if="{{item.description}}">{{item.description}}</view>
+          
+          <view class="knowledge-tech-info"> 
+            <view class="tech-item"> 
+              <text class="tech-label">嵌入模型:</text>
+              <text class="tech-value">{{item.embedding_model}}</text>
+            </view>
+            <view class="tech-item">  
+              <text class="tech-label">分块方法:</text>              
+              <text class="tech-value">{{item.chunk_method}}</text>            
+            </view>          
+          </view>
+          
+          <view class="knowledge-stats">
+            <view class="stat-item">
+              <text class="stat-value">{{item.docsCount}}</text>
+              <text class="stat-label">文档</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{item.chunkCount}}</text>
+              <text class="stat-label">分块</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{item.tokenNum}}</text>
+              <text class="stat-label">token</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value-time">{{item.createTime}}</text>
+              <text class="stat-label">创建</text>
+            </view>
+          </view>
+          
+          <view class="knowledge-footer">
+            <view class="tag-list">
+              <block wx:for="{{item.tags}}" wx:for-item="tag" wx:key="index">
+                <t-tag class="tag" variant="light" theme="{{index % 2 === 0 ? 'primary' : 'success'}}">{{tag}}</t-tag>
+              </block>
+            </view>
+          </view>
+        </view>
+        
+        <!-- 列表底部加载状态 -->
+        <block wx:if="{{loadingMore}}">
+          <view class="loading-more">
+            <t-loading theme="circular" size="40rpx" text="加载更多..." />
+          </view>
+        </block>
+        <block wx:else>
+          <view class="list-end">-- 已经到底了 --</view>
+        </block>
+      </block>
+      <block wx:else>
+        <view class="empty-container">
+          <t-empty icon="info-circle-filled" description="暂无知识库" />
+          <t-button theme="primary" size="medium" bindtap="onAddKnowledgeBase" class="add-first-kb">创建知识库</t-button>
+        </view>
+      </block>
+    </scroll-view>
+  </block>
+  
+  <!-- 浮动按钮 - 开始对话 -->
+  <t-fab icon="chat" text="对话" bind:click="goToChat" aria-label="开始对话" />
+
+  <!-- 添加知识库对话框 -->
+  <t-dialog
+    visible="{{showAddDialog}}"
+    title="创建知识库"
+    confirm-btn="{{formSubmitting ? '创建中...' : '创建'}}"
+    cancel-btn="取消"
+    bind:confirm="confirmAdd"
+    bind:cancel="cancelAdd"
+    t-class-content="dialog-content"
+    t-class="clear-dialog hd-dialog"
+    confirm-btn-loading="{{formSubmitting}}"
+  >
+    <scroll-view slot="content" scroll-y class="form-content">
+      <view class="animate-in">
+        <!-- 名称输入 -->
+        <view class="form-item {{formErrors.name ? 'form-item-error animate-shake' : ''}}">
+          <view class="form-label">知识库名称<text class="required">*</text></view>
+          <t-input 
+            value="{{newKnowledgeBase.name}}" 
+            placeholder="请输入知识库名称" 
+            bindchange="onInputChange" 
+            data-field="name"
+            maxlength="20"
+            t-class="custom-input"
+            prefix-icon="{{ {name: 'edit'} }}"
+          />
+          <view wx:if="{{formErrors.name}}" class="error-message">{{formErrors.name}}</view>
+        </view>
+        
+        <!-- 描述输入 -->
+        <view class="form-item">
+          <view class="form-label">描述</view>
+          <t-textarea 
+            value="{{newKnowledgeBase.description}}" 
+            placeholder="请输入知识库描述" 
+            bindchange="onInputChange" 
+            data-field="description"
+            maxlength="200"
+            disableDefaultPadding="{{true}}"
+            autosize="{{true}}"
+            t-class="textarea-input"
+          />
+        </view>
+        
+        <!-- 标签输入 -->
+        <view class="form-item">
+          <view class="form-label">标签</view>
+          <view class="tag-input-container">
+            <t-input 
+              value="{{inputTag}}" 
+              placeholder="请输入标签" 
+              bindchange="onTagInputChange"
+              suffix-icon="{{ {name: 'add'} }}"
+              bind:click-suffix-icon="addTag"
+              bind:enter="addTag"
+              t-class="custom-input"
+              prefix-icon="{{ {name: 'tag'} }}"
+            />
+            <view class="tag-suggestion">
+              <text class="tag-tip">选择或添加标签:</text>
+              <scroll-view scroll-x class="tag-options">
+                <block wx:for="{{tagOptions}}" wx:key="index">
+                  <t-tag 
+                    class="tag-option" 
+                    variant="light" 
+                    theme="default"
+                    bindtap="addTagFromOption" 
+                    data-tag="{{item}}"
+                  >{{item}}</t-tag>
+                </block>
+              </scroll-view>
+            </view>
+          </view>
+          
+          <!-- 已选标签 -->
+          <view wx:if="{{newKnowledgeBase.tags.length > 0}}" class="selected-tags">
+            <block wx:for="{{newKnowledgeBase.tags}}" wx:key="index">
+              <t-tag 
+                class="tag" 
+                variant="light" 
+                theme="{{index % 2 === 0 ? 'primary' : 'success'}}" 
+                closable
+                bindclose="removeTag"
+                data-index="{{index}}"
+              >{{item}}</t-tag>
+            </block>
+          </view>
+        </view>
+        
+        <view class="divider"></view>
+        
+        <!-- 嵌入模型选择器 -->
+        <view class="form-item {{formErrors.embedding_model ? 'form-item-error animate-shake' : ''}}">
+          <view class="form-label">嵌入模型<text class="required">*</text></view>
+          <t-cell 
+            hover 
+            bordered="{{false}}" 
+            t-class="custom-input" 
+            note="{{getEmbeddingModelLabel(newKnowledgeBase.embedding_model)}}"
+            title="请选择嵌入模型"
+            arrow 
+            bind:click="onEmbeddingModelPicker" 
+          />
+          <view wx:if="{{formErrors.embedding_model}}" class="error-message">{{formErrors.embedding_model}}</view>
+        </view>
+        
+        <!-- 分块方法选择器 -->
+        <view class="form-item {{formErrors.chunk_method ? 'form-item-error animate-shake' : ''}}">
+          <view class="form-label">分块方法<text class="required">*</text></view>
+          <t-cell 
+            hover 
+            bordered="{{false}}" 
+            t-class="custom-input" 
+            note="{{getChunkMethodLabel(newKnowledgeBase.chunk_method)}}"
+            title="请选择分块方法"
+            arrow 
+            bind:click="onChunkMethodPicker" 
+          />
+          <view wx:if="{{formErrors.chunk_method}}" class="error-message">{{formErrors.chunk_method}}</view>
+        </view>
+        
+        <view class="divider"></view>
+        
+        <!-- 分块配置（根据选择的分块方法显示不同选项） -->
+        <block wx:if="{{newKnowledgeBase.chunk_method === 'naive'}}">
+          <view class="form-item">
+            <view class="form-label">分块配置</view>
+            <view class="parser-config-container">
+              <view class="parser-config-item">
+                <text class="parser-config-label">分块大小(tokens)</text>
+                <t-input 
+                  type="number"
+                  value="{{newKnowledgeBase.parser_config.chunk_token_num || 128}}" 
+                  placeholder="128" 
+                  bindchange="onParserConfigChange" 
+                  data-field="chunk_token_num"
+                  t-class="custom-input"
+                />
+              </view>
+              <view class="parser-config-item">
+                <text class="parser-config-label">分隔符</text>
+                <t-input 
+                  value="{{newKnowledgeBase.parser_config.delimiter || '\\n'}}" 
+                  placeholder="\n" 
+                  bindchange="onParserConfigChange" 
+                  data-field="delimiter"
+                  t-class="custom-input"
+                />
+              </view>
+              <t-checkbox 
+                value="{{newKnowledgeBase.parser_config.html4excel || false}}" 
+                label="Excel转HTML" 
+                bind:change="onParserConfigCheckChange" 
+                data-field="html4excel"
+                t-class="custom-checkbox"
+              />
+            </view>
+          </view>
+        </block>
+      </view>
+    </scroll-view>
+  </t-dialog>
+
+  <!-- 编辑知识库对话框 -->
+  <t-dialog
+    visible="{{showEditDialog}}"
+    title="编辑知识库"
+    confirm-btn="保存"
+    cancel-btn="取消"
+    bind:confirm="confirmEdit"
+    bind:cancel="cancelEdit"
+    t-class-content="dialog-content"
+    t-class="clear-dialog hd-dialog"
+  >
+    <scroll-view slot="content" scroll-y class="form-content">
+      <!-- 名称输入 -->
+      <view class="form-item">
+        <view class="form-label">知识库名称<text class="required">*</text></view>
+        <t-input 
+          value="{{editingKnowledgeBase.name}}" 
+          placeholder="请输入知识库名称" 
+          bindchange="onEditInputChange" 
+          data-field="name"
+          maxlength="20"
+        />
+      </view>
+      
+      <!-- 描述输入 -->
+      <view class="form-item">
+        <view class="form-label">描述</view>
+        <t-textarea 
+          value="{{editingKnowledgeBase.description}}" 
+          placeholder="请输入知识库描述" 
+          bindchange="onEditInputChange" 
+          data-field="description"
+          maxlength="200"
+          disableDefaultPadding="{{true}}"
+          autosize="{{true}}"
+          t-class="textarea-input"
+        />
+      </view>
+      
+      <!-- 嵌入模型选择器 -->      
+      <view class="form-item"> 
+        <view class="form-label">嵌入模型<text class="required">*</text></view>  
+        <t-cell 
+          hover 
+          bordered="{{false}}" 
+          t-class="custom-input" 
+          note="{{editingKnowledgeBase.embedding_model}}"
+          title="请选择嵌入模型" 
+          arrow 
+          bind:click="onEditEmbeddingModelPicker" 
+        />
+      </view>
+      
+      <!-- 分块方法选择器 --> 
+      <view class="form-item">
+        <view class="form-label">分块方法<text class="required">*</text></view>  
+        <t-cell 
+          hover 
+          bordered="{{false}}" 
+          t-class="custom-input" 
+          note="{{editingKnowledgeBase.chunk_method}}"
+          title="请选择分块方法" 
+          arrow 
+          bind:click="onEditChunkMethodPicker" 
+        />
+      </view>
+      
+      <!-- 标签输入 -->
+      <view class="form-item">
+        <view class="form-label">标签</view>
+        <view class="tag-input-container">
+          <t-input 
+            value="{{editInputTag}}" 
+            placeholder="请输入标签" 
+            bindchange="onEditTagInputChange"
+            suffix-icon="{{ {name: 'add'} }}"
+            bind:click-suffix-icon="addEditTag"
+            bind:enter="addEditTag"
+          />
+          <view class="tag-suggestion">
+            <text class="tag-tip">选择或添加标签:</text>
+            <scroll-view scroll-x class="tag-options">
+              <block wx:for="{{tagOptions}}" wx:key="index">
+                <t-tag 
+                  class="tag-option" 
+                  variant="light" 
+                  theme="default"
+                  bindtap="addEditTagFromOption" 
+                  data-tag="{{item}}"
+                >{{item}}</t-tag>
+              </block>
+            </scroll-view>
+          </view>
+        </view>
+        
+        <!-- 已选标签 -->
+        <view wx:if="{{editingKnowledgeBase.tags.length > 0}}" class="selected-tags">
+          <block wx:for="{{editingKnowledgeBase.tags}}" wx:key="index">
+            <t-tag 
+              class="tag" 
+              variant="light" 
+              theme="{{index % 2 === 0 ? 'primary' : 'success'}}" 
+              closable
+              bindclose="removeEditTag"
+              data-index="{{index}}"
+            >{{item}}</t-tag>
+          </block>
+        </view>
+      </view>
+      
+      <!-- 分块配置（根据选择的分块方法显示不同选项） -->
+      <block wx:if="{{editingKnowledgeBase.chunk_method === 'naive'}}">
+        <view class="form-item">
+          <view class="form-label">分块配置</view>
+          <view class="parser-config-item">
+            <text class="parser-config-label">分块大小(tokens)</text>
+            <t-input 
+              type="number"
+              value="{{editingKnowledgeBase.parser_config.chunk_token_num || 128}}" 
+              placeholder="128" 
+              bindchange="onEditParserConfigChange" 
+              data-field="chunk_token_num"
+            />
+          </view>
+          <view class="parser-config-item">
+            <text class="parser-config-label">分隔符</text>
+            <t-input 
+              value="{{editingKnowledgeBase.parser_config.delimiter || '\\n'}}" 
+              placeholder="\n" 
+              bindchange="onEditParserConfigChange" 
+              data-field="delimiter"
+            />
+          </view>
+          <t-checkbox 
+            value="{{editingKnowledgeBase.parser_config.html4excel || false}}" 
+            label="Excel转HTML" 
+            bind:change="onEditParserConfigCheckChange" 
+            data-field="html4excel"
+          />
+        </view>
+      </block>
+    </scroll-view>
+  </t-dialog>
+
+  <!-- 删除确认对话框 -->
+  <t-dialog
+    visible="{{showDeleteDialog}}"
+    title="删除知识库"
+    content="确定要删除该知识库吗？此操作不可撤销。"
+    confirm-btn="删除"
+    cancel-btn="取消"
+    bind:confirm="confirmDelete"
+    bind:cancel="cancelDelete"
+    confirm-btn-color="#e34d59"
+    t-class="clear-dialog hd-dialog"
+  />
+
+  <!-- 嵌入模型选择器(新建) -->
+  <t-picker
+    visible="{{embeddingModelVisible}}"
+    value="{{[newKnowledgeBase.embedding_model]}}"
+    data-key="embeddingModel"
+    title="选择嵌入模型"
+    cancelBtn="取消"
+    confirmBtn="确认"
+    bindchange="onPickerChange"
+    bindpick="onColumnChange"
+    bindcancel="onPickerCancel"
+  >
+    <t-picker-item options="{{embeddingModelOptions}}"></t-picker-item>
+  </t-picker>
+
+  <!-- 分块方法选择器(新建) -->
+  <t-picker
+    visible="{{chunkMethodVisible}}"
+    value="{{[newKnowledgeBase.chunk_method]}}"
+    data-key="chunkMethod"
+    title="选择分块方法"
+    cancelBtn="取消"
+    confirmBtn="确认"
+    bindchange="onPickerChange"
+    bindpick="onColumnChange"
+    bindcancel="onPickerCancel"
+  >
+    <t-picker-item options="{{chunkMethodOptions}}"></t-picker-item>
+  </t-picker>
+
+  <!-- 嵌入模型选择器(编辑) -->
+  <t-picker
+    visible="{{editEmbeddingModelVisible}}"
+    value="{{[editingKnowledgeBase.embedding_model]}}"
+    data-key="editEmbeddingModel"
+    title="选择嵌入模型"
+    cancelBtn="取消"
+    confirmBtn="确认"
+    bindchange="onPickerChange"
+    bindpick="onColumnChange"
+    bindcancel="onPickerCancel"
+  >
+    <t-picker-item options="{{embeddingModelOptions}}"></t-picker-item>
+  </t-picker>
+
+  <!-- 分块方法选择器(编辑) -->
+  <t-picker
+    visible="{{editChunkMethodVisible}}"
+    value="{{[editingKnowledgeBase.chunk_method]}}"
+    data-key="editChunkMethod"
+    title="选择分块方法"
+    cancelBtn="取消"
+    confirmBtn="确认"
+    bindchange="onPickerChange"
+    bindpick="onColumnChange"
+    bindcancel="onPickerCancel"
+  >
+    <t-picker-item options="{{chunkMethodOptions}}"></t-picker-item>
+  </t-picker>
+</view>  

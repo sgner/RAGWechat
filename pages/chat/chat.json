@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "对话助手",
+  "usingComponents": {
+    "t-dropdown-menu": "../../miniprogram/miniprogram_npm/tdesign-miniprogram/dropdown-menu/dropdown-menu",
+    "t-dropdown-item": "../../miniprogram/miniprogram_npm/tdesign-miniprogram/dropdown-item/dropdown-item"
+  }
+} 

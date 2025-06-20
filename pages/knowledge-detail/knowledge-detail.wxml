@@ -1,0 +1,183 @@
+<view class="container">
+  <view class="header">
+    <view class="kb-profile">
+      <block wx:if="{{knowledgeBase.avatar}}">
+        <image src="{{knowledgeBase.avatar}}" class="kb-avatar" mode="aspectFill"></image>
+      </block>
+      <block wx:else>
+        <t-avatar class="kb-avatar" icon="book" size="large" />
+      </block>
+      <view class="kb-info">
+        <view class="title">{{knowledgeBase.name}}</view>
+        <view class="language-tag">{{knowledgeBase.language}}</view>
+        <view class="desc">{{knowledgeBase.description || '暂无描述'}}</view>
+      </view>
+    </view>
+    
+    <view class="tags">
+      <block wx:for="{{knowledgeBase.tags}}" wx:key="index">
+        <t-tag class="tag" theme="{{index % 2 === 0 ? 'primary' : 'success'}}" variant="light">{{item}}</t-tag>
+      </block>
+    </view>
+  </view>
+  
+  <!-- 统计信息区域 -->
+  <view class="section stats-section">
+    <view class="stats-grid">
+      <view class="stats-item">
+        <view class="stats-value">{{knowledgeBase.docsCount}}</view>
+        <view class="stats-label">文档数量</view>
+      </view>
+      <view class="stats-item">
+        <view class="stats-value">{{knowledgeBase.chunkCount}}</view>
+        <view class="stats-label">分块数量</view>
+      </view>
+      <view class="stats-item">
+        <view class="stats-value">{{knowledgeBase.tokenNum}}</view>
+        <view class="stats-label">Token数量</view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 添加技术信息区域 -->
+  <view class="section tech-section">
+    <view class="section-title">技术信息</view>
+    <view class="tech-grid">
+      <view class="tech-item">
+        <view class="tech-label">嵌入模型</view>
+        <view class="tech-value">{{knowledgeBase.embedding_model || '未指定'}}</view>
+      </view>
+      <view class="tech-item">
+        <view class="tech-label">分块方法</view>
+        <view class="tech-value">{{knowledgeBase.chunk_method || '默认分块'}}</view>
+      </view>
+      <view class="tech-item" bindtap="showConfigDetail">
+        <view class="tech-label">解析器配置</view>
+        <view class="tech-value flex-row">
+          <text>查看详情</text>
+          <t-icon name="chevron-right" size="32rpx" color="#999" />
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <view class="section time-section">
+    <view class="time-item">
+      <view class="time-label">创建时间</view>
+      <view class="time-value">{{knowledgeBase.createTime}}</view>
+    </view>
+    <view class="time-item">
+      <view class="time-label">更新时间</view>
+      <view class="time-value">{{knowledgeBase.updateTime}}</view>
+    </view>
+  </view>
+  
+  <view class="section action-section">
+    <t-button theme="primary" size="large" icon="chat" bindtap="startChat" block>开始对话</t-button>
+  </view>
+  
+  <view class="section config-section">
+    <view class="section-header">
+      <view class="section-title">文档列表 ({{totalDocs}})</view>
+      <t-button theme="primary" size="small" icon="add" variant="outline" bindtap="uploadDocument" style="margin-right:12rpx;">添加文档</t-button>
+      <t-button theme="default" size="small" icon="info" variant="outline" bindtap="testJWTAuth" style="margin-right:12rpx;">测试JWT</t-button>
+    </view>
+    
+    <!-- 文档列表 -->
+    <view class="document-list">
+      <block wx:if="{{documents.length > 0}}">
+        <view class="document-item" wx:for="{{documents}}" wx:key="id">
+          <view class="document-icon">
+            <block wx:if="{{item.thumbnail}}">
+              <image src="{{item.thumbnail}}" mode="aspectFill" class="doc-thumbnail"></image>
+            </block>
+            <block wx:else>
+              <t-icon name="{{item.type === 'pdf' ? 'file-pdf' : (item.type === 'docx' ? 'file-doc' : (item.type === 'xlsx' ? 'file-excel' : (item.type === 'pptx' ? 'file-ppt' : 'file-text')))}}" size="48" color="{{item.type === 'pdf' ? '#F53F3F' : (item.type === 'docx' ? '#0052D9' : (item.type === 'xlsx' ? '#2BA471' : (item.type === 'pptx' ? '#ED7B2F' : '#999')))}}" />
+            </block>
+          </view>
+          <view class="document-info">
+            <view class="document-name">{{item.name}}</view>
+            <view class="document-meta">
+              <text class="document-type">{{item.type}}</text>
+              <text class="document-size">{{item.size}}</text>
+            </view>
+            <view class="document-stats">
+              <text class="document-chunks"><t-icon name="layers" size="28rpx" color="#0052D9" /> {{item.chunkCount}}个分块</text>
+              <text class="document-tokens"><t-icon name="chart-bubble" size="28rpx" color="#0052D9" /> {{item.tokenCount}}个tokens</text>
+            </view>
+            <view class="document-status">
+              <text class="status-label"><t-icon name="info-circle" size="28rpx" /> 状态:</text>
+              <text class="status-value {{item.status === 'DONE' ? 'status-done' : (item.status === 'FAILED' ? 'status-failed' : 'status-processing')}}">
+                {{item.status === 'DONE' ? '已完成' : (item.status === 'FAILED' ? '失败' : (item.status === 'PROCESSING' ? '处理中' : item.status))}}
+              </text>
+              <block wx:if="{{item.status === 'PROCESSING'}}">
+                <text class="progress-text">{{item.progressPercent}}%</text>
+                <progress percent="{{item.progressPercent}}" stroke-width="4" activeColor="#0052D9" backgroundColor="#E7E7E7" />
+              </block>
+            </view>
+            <view class="document-dates">
+              <text class="update-date"><t-icon name="time" size="24rpx" color="#999" /> 更新于: {{item.updateTime || item.createTime}}</text>
+            </view>
+          </view>
+          <view class="document-actions">
+            <t-button icon="edit-1" size="small" shape="circle" variant="text" bindtap="editDocument" data-id="{{item.id}}" />
+            <t-button icon="delete" size="small" shape="circle" variant="text" theme="danger" bindtap="deleteDocument" data-id="{{item.id}}" />
+          </view>
+        </view>
+        
+        <!-- 加载更多 -->
+        <view wx:if="{{hasMore}}" class="load-more" bindtap="loadMoreDocuments">
+          <t-loading theme="dots" size="40rpx" wx:if="{{loading}}" />
+          <view wx:else class="load-more-button">
+            <t-icon name="chevron-down" size="24rpx" />
+            <text>加载更多文档</text>
+          </view>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="empty-tip">
+          <t-empty icon="file-text" description="暂无文档" />
+          <t-button theme="primary" icon="add" size="small" bindtap="uploadDocument" class="empty-add-btn">添加文档</t-button>
+        </view>
+      </block>
+    </view>
+  </view>
+  
+  <!-- 编辑文档对话框 -->
+  <t-dialog
+    visible="{{showEditDialog}}"
+    title="编辑文档"
+    confirm-btn="确认"
+    cancel-btn="取消"
+    bind:confirm="confirmEditDocument"
+    bind:cancel="closeEditDialog"
+  >
+    <view slot="content">
+      <t-input 
+        label="文档名称" 
+        value="{{editingDocument.name}}" 
+        placeholder="请输入文档名称" 
+        bindchange="onDocNameChange"
+      />
+    </view>
+  </t-dialog>
+  
+  <!-- 配置详情对话框 -->
+  <t-dialog
+    visible="{{showConfigDetailDialog}}"
+    title="解析器配置详情"
+    confirm-btn="关闭"
+    bind:confirm="closeConfigDetail">
+    <scroll-view slot="content" scroll-y class="config-detail-content">
+      <block wx:if="{{knowledgeBase.parser_config}}">
+        <view class="config-detail-item" wx:for="{{configDetailItems}}" wx:key="key">
+          <text class="config-detail-label">{{item.label}}:</text>
+          <text class="config-detail-value">{{item.value}}</text>
+        </view>
+      </block>
+      <view wx:else class="config-empty">
+        <text>暂无详细配置信息</text>
+      </view>
+    </scroll-view>
+  </t-dialog>
+</view> 

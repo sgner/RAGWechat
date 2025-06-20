@@ -1,0 +1,209 @@
+<view class="container">
+  <!-- 空状态 -->
+  <block wx:if="{{!currentAssistant.id}}">
+    <view class="empty-container">
+      <image src="../../assets/images/empty-chat.png" mode="aspectFit" class="empty-image"></image>
+      <view class="empty-title">开始对话</view>
+      <view class="empty-desc">选择一个助手开始对话</view>
+      <view class="empty-actions">
+        <t-button theme="primary" bindtap="goToCreateKB" icon="add" class="action-btn">创建知识库</t-button>
+      </view>
+    </view>
+  </block>
+
+  <!-- 聊天界面 -->
+  <block wx:else>
+    <!-- 顶部固定区域 -->
+    <view class="header">
+      <view class="header-top">
+        <t-dropdown-menu>
+          <!-- 助手选择器 -->
+          <t-dropdown-item
+            label="助手"
+            options="{{assistantOptions}}"
+            value="{{selectedAssistant}}"
+            bindchange="onAssistantChange"
+          />
+          
+          <!-- 会话选择器 -->
+          <t-dropdown-item
+            label="会话"
+            options="{{sessionOptions}}"
+            value="{{selectedSession}}"
+            bindchange="onSessionChange"
+          />
+        </t-dropdown-menu>
+        
+        <!-- 刷新按钮 -->
+        <view class="refresh-btn" bindtap="onManualRefresh">
+          <t-icon name="{{isRefreshing ? 'loading' : 'refresh'}}" size="40rpx" color="#0052D9" />
+        </view>
+      </view>
+      
+      <!-- 当前助手和知识库信息 -->
+      <view class="kb-info" wx:if="{{currentAssistant.id}}">
+        <view class="assistant-header">
+          <image class="assistant-avatar" src="{{currentAssistant.avatar || '../../assets/images/assistant-avatar.png'}}" mode="aspectFill"></image>
+          <view class="assistant-details">
+            <text class="kb-name">{{currentAssistant.name}}</text>
+            <text class="kb-desc">{{currentAssistant.description || '无描述'}}</text>
+          </view>
+        </view>
+        
+        <view class="kb-dataset" wx:if="{{currentAssistant.datasets && currentAssistant.datasets.length > 0}}">
+          <view class="dataset-header">
+            <text class="dataset-label">知识库：</text>
+            <text class="dataset-name">{{currentAssistant.datasets[0].name}}</text>
+          </view>
+          <text class="dataset-desc" wx:if="{{currentAssistant.datasets[0].description}}">{{currentAssistant.datasets[0].description}}</text>
+          <view class="dataset-meta">
+            <text class="dataset-docs" wx:if="{{currentAssistant.datasets[0].document_count}}">文档: {{currentAssistant.datasets[0].document_count}}个</text>
+            <text class="dataset-tokens" wx:if="{{currentAssistant.datasets[0].token_num}}">词元: {{currentAssistant.datasets[0].token_num}}</text>
+            <text class="dataset-language">语言: {{currentAssistant.datasets[0].language || '中文'}}</text>
+          </view>
+        </view>
+        
+        <view class="assistant-meta">
+          <text class="assistant-model">模型: {{currentAssistant.llm.model_name || 'DeepSeek-1.5B'}}</text>
+          <text class="assistant-created">创建于: {{formatDate(currentAssistant.create_date)}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 消息列表 - 独立的固定滚动区域，支持下拉刷新 -->
+    <scroll-view 
+      scroll-y 
+      class="messages-container"
+      scroll-into-view="{{scrollToMessage}}"
+      bindscrolltoupper="loadMoreMessages"
+      refresher-enabled="{{true}}"
+      refresher-triggered="{{refresherTriggered}}"
+      bindrefresherrefresh="onRefresh"
+      bindrefresherpulling="onRefresherPulling"
+      bindrefresherrestore="onRefresherRestore"
+      bindrefresherabort="onRefresherAbort"
+      upper-threshold="50"
+    >
+      <!-- 顶部空白区域，确保有足够的滚动空间 -->
+      <view class="messages-top-space"></view>
+      
+      <!-- 加载更多 -->
+      <view class="load-more" wx:if="{{hasMoreHistory}}">
+        <t-loading theme="circular" size="40rpx" wx:if="{{pageLoading}}"></t-loading>
+        <text wx:else bindtap="loadMoreMessages">加载更多</text>
+      </view>
+      
+      <!-- 消息列表 -->
+      <view class="messages">
+        <view 
+          wx:for="{{messages}}" 
+          wx:key="id"
+          id="{{item.id}}"
+          class="message {{item.role === 'user' ? 'user' : 'assistant'}}"
+          bindlongpress="onLongPressMessage"
+          data-id="{{item.id}}"
+        >
+          <!-- 思考内容（仅对AI消息显示） -->
+          <view class="thinking-content" wx:if="{{item.role === 'assistant' && item.thinking}}">
+            <view class="thinking-header" bindtap="toggleThinking" data-id="{{item.id}}">
+              <t-icon name="browse" size="32rpx" color="#999" />
+              <text>思考过程</text>
+            </view>
+            <view class="thinking-text" wx:if="{{item.showThinking}}">
+              <text>{{item.thinking}}</text>
+            </view>
+          </view>
+          
+          <view class="message-content">
+            <rich-text nodes="{{item.richNodes && item.richNodes.length > 0 ? item.richNodes : item.content}}"></rich-text>
+            <view class="loading-indicator" wx:if="{{item.isStreaming}}">
+              <view class="dot-flashing"></view>
+            </view>
+          </view>
+          
+          <!-- 轻量级思考状态指示器 -->
+          <view class="thinking-indicator" wx:if="{{isLoading && item.role === 'assistant' && messages[messages.length-1].id === item.id}}">
+            <view class="thinking-dots">
+              <view class="thinking-dot"></view>
+              <view class="thinking-dot"></view>
+              <view class="thinking-dot"></view>
+            </view>
+            <text class="thinking-label">正在思考</text>
+          </view>
+          
+          <!-- 引用信息 -->
+          <view class="references" wx:if="{{item.references && item.references.length > 0}}">
+            <text class="reference-title" bindtap="toggleReferences">引用文档({{item.references.length}})</text>
+            
+            <!-- 引用文档列表 - 总是显示文档名称和头像 -->
+            <view class="reference-documents">
+              <view 
+                wx:for="{{item.references}}" 
+                wx:for-item="ref" 
+                wx:key="documentId"
+                class="reference-document-item"
+              >
+                <!-- 文档头像 -->
+                <view class="document-avatar">
+                  <t-icon name="{{getDocumentIcon(ref.documentName)}}" size="32rpx" color="{{getDocumentIconColor(ref.documentName)}}" />
+                </view>
+                <!-- 文档信息 -->
+                <view class="document-info">
+                  <text class="document-name">{{ref.documentName}}</text>
+                  <text class="document-pages" wx:if="{{ref.pageNumbers}}">第{{ref.pageNumbers}}页</text>
+                </view>
+              </view>
+            </view>
+            
+            <!-- 引用详情面板（可展开查看更多信息） -->
+            <view class="reference-list" wx:if="{{showReferences}}">
+              <view 
+                wx:for="{{item.references}}" 
+                wx:for-item="ref" 
+                wx:key="documentId"
+                class="reference-item"
+              >
+                <text class="reference-name">{{ref.documentName}}</text>
+                <text class="reference-pages" wx:if="{{ref.pageNumbers}}">第{{ref.pageNumbers}}页</text>
+              </view>
+            </view>
+          </view>
+          
+          <view class="message-time">{{formatTime(item.timestamp)}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </block>
+  
+  <!-- 输入区域 - 固定在页面底部 -->
+  <view class="input-area" wx:if="{{currentAssistant.id}}">
+    <view class="input-container">
+      <t-input
+        value="{{inputMessage}}"
+        placeholder="输入您的问题..."
+        bind:change="onInputChange"
+        bind:enter="sendMessage"
+        borderless
+        suffixIcon="{{ inputMessage ? 'close' : '' }}"
+        bind:click-suffix-icon="clearInput"
+      />
+    </view>
+    <view class="send-btn" bindtap="testButtonClick">
+      <t-icon name="{{isLoading ? 'loading' : 'send'}}" size="48rpx" color="#0052D9" />
+    </view>
+  </view>
+  
+  <!-- 长按消息操作菜单 -->
+  <t-popup visible="{{longPressActionVisible}}" bind:visible-change="closeLongPressAction" placement="bottom">
+    <view class="action-sheet">
+      <view class="action-item" bindtap="copyMessage">
+        <t-icon name="file-copy" size="40rpx" />
+        <text>复制</text>
+      </view>
+      <view class="action-item" bindtap="deleteMessage">
+        <t-icon name="delete" size="40rpx" color="#E34D59" />
+        <text class="delete-text">删除</text>
+      </view>
+    </view>
+  </t-popup>
+</view> 

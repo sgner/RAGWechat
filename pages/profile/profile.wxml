@@ -1,0 +1,82 @@
+<view class="container">
+  <!-- 顶部区域 - 登录前 -->
+  <view class="header-panel">
+    <view class="title">我的</view>
+    
+    <block wx:if="{{!userInfo}}">
+      <!-- 未登录状态 -->
+      <view class="user-info-block">
+        <view class="avatar-placeholder">
+          <t-icon name="user" size="80rpx" color="#fff" />
+        </view>
+        <t-button theme="primary" shape="round" size="medium" bindtap="getUserProfile" t-class="login-btn">
+          <t-icon name="logo-wechat" size="40rpx" />
+          <text class="login-text">微信一键登录</text>
+        </t-button>
+      </view>
+    </block>
+    
+    <block wx:else>
+      <!-- 已登录状态 -->
+      <view class="user-info-block">
+        <t-avatar image="{{userInfo.avatarUrl}}" size="large" />
+        <view class="user-name">{{userInfo.nickName}}</view>
+      </view>
+    </block>
+  </view>
+
+  <!-- 微信登录状态区域 -->
+  <view class="wx-login-section">
+    <t-cell-group title="微信登录状态">
+      <t-cell 
+        title="{{isWxLoggedIn ? '已登录' : '未登录'}}" 
+        description="{{isWxLoggedIn ? '登录时间: ' + wxLoginInfo.formattedLoginTime : '点击进行微信登录'}}"
+        left-icon="{{isWxLoggedIn ? 'check-circle' : 'close-circle'}}"
+        hover="{{!isWxLoggedIn}}"
+        arrow="{{!isWxLoggedIn}}"
+        bindtap="{{isWxLoggedIn ? '' : 'triggerWxLogin'}}"
+      />
+      <t-cell 
+        wx:if="{{isWxLoggedIn && wxLoginInfo.code}}"
+        title="登录Code" 
+        description="{{wxLoginInfo.code}}"
+        left-icon="key"
+      />
+      <t-cell 
+        wx:if="{{isWxLoggedIn}}"
+        title="清除登录信息" 
+        left-icon="logout"
+        hover
+        arrow
+        bindtap="clearWxLogin"
+      />
+    </t-cell-group>
+  </view>
+
+  <!-- 功能菜单区域 -->
+  <view class="menu-section">
+    <t-cell-group>
+      <t-cell title="我的知识库" hover arrow left-icon="server" url="/pages/home/home" />
+      <t-cell title="对话记录" hover arrow left-icon="chat" url="/pages/chat/chat" />
+    </t-cell-group>
+  </view>
+  
+  <view class="menu-section">
+    <t-cell-group>
+      <t-cell title="使用帮助" hover arrow left-icon="help-circle" />
+      <t-cell title="设置" hover arrow left-icon="setting" />
+    </t-cell-group>
+  </view>
+  
+  <view class="menu-section">
+    <t-cell-group>
+      <t-cell title="关于我们" hover arrow left-icon="info-circle" />
+    </t-cell-group>
+  </view>
+  
+  <block wx:if="{{userInfo}}">
+    <view class="logout-btn-wrapper">
+      <t-button theme="danger" size="large" variant="outline" block bindtap="onLogout">退出登录</t-button>
+    </view>
+  </block>
+</view> 

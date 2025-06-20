@@ -1,0 +1,71 @@
+.container {
+  min-height: 100vh;
+  background-color: #f8f8f8;
+  padding-bottom: 40rpx;
+}
+
+.header-panel {
+  background: linear-gradient(135deg, #6366f1, #3b82f6);
+  padding: 48rpx 32rpx;
+  color: white;
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  margin-bottom: 40rpx;
+}
+
+.user-info-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 0 40rpx;
+}
+
+.avatar-placeholder {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32rpx;
+}
+
+.login-btn {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 40rpx !important;
+  background-color: #ffffff !important;
+  color: #3b82f6 !important;
+}
+
+.login-text {
+  margin-left: 8rpx;
+}
+
+.user-name {
+  margin-top: 16rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: white;
+}
+
+.wx-login-section {
+  margin-top: 32rpx;
+}
+
+.menu-section {
+  margin-top: 32rpx;
+}
+
+t-cell {
+  padding: 32rpx !important;
+}
+
+.logout-btn-wrapper {
+  margin: 80rpx 32rpx 0;
+} 
